@@ -31,6 +31,15 @@ class DomainFilterTests(unittest.TestCase):
         f = self.make_filter("ads.example.com\n")
         self.assertFalse(f.is_blocked("openai.com"))
 
+    def test_inline_comments_stripped(self):
+        f = self.make_filter("0.0.0.0 badtracker.com # track user ads\n")
+        self.assertTrue(f.is_blocked("badtracker.com"))
+        self.assertFalse(f.is_blocked("track"))
+
+    def test_hosts_file_syntax(self):
+        f = self.make_filter("127.0.0.1 telemetry.example.com\n")
+        self.assertTrue(f.is_blocked("telemetry.example.com"))
+
 
 if __name__ == "__main__":
     unittest.main()

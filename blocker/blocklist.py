@@ -6,8 +6,8 @@ def load_domains(path: Path) -> set[str]:
     if not path.exists():
         return domains
     for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip().lower()
-        if not line or line.startswith("#"):
+        line = raw.split("#", 1)[0].strip().lower()
+        if not line:
             continue
         # Accept plain domains and simple hosts-file style entries.
         parts = line.split()

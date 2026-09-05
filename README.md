@@ -4,7 +4,7 @@ A lightweight DNS-based ad and tracker blocker for a Windows laptop.
 
 ## Features
 
-- Local DNS proxy on `127.0.0.1:5353`
+- Local DNS proxy on `127.0.0.1:5354` (configurable via `DNS_PORT`)
 - Domain-based blocking
 - Separate blocklist and whitelist
 - Runtime statistics
@@ -26,7 +26,8 @@ laptop-ad-blocker/
 │   ├── blocklist.txt
 │   └── whitelist.txt
 ├── tests/
-│   └── test_blocklist.py
+│   ├── test_blocklist.py
+│   └── test_dns_server.py
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -44,7 +45,7 @@ From the repository root:
 python -m blocker.dns_server
 ```
 
-The DNS server listens on `127.0.0.1:5353` by default. This version is intentionally not a privileged system-wide DNS installer. Test it locally first, then configure your operating system DNS forwarding setup if you want system-wide filtering.
+The DNS server listens on `127.0.0.1:5354` by default (port 5354 avoids port conflicts with OS mDNS services on port 5353). You can configure `DNS_HOST`, `DNS_PORT`, `UPSTREAM_DNS`, and `DNS_TIMEOUT` via environment variables. Test it locally first, then configure your operating system DNS forwarding setup if you want system-wide filtering.
 
 ## Important limitation
 

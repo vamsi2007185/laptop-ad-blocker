@@ -4,7 +4,7 @@
 Application / Browser
         |
         v
- Local DNS proxy (127.0.0.1:5353)
+ Local DNS proxy (127.0.0.1:5354)
         |
         +--> DomainFilter --> blocklist.txt / whitelist.txt
         |       |

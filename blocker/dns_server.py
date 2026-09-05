@@ -2,7 +2,15 @@ import socket
 import struct
 
 from .blocklist import DomainFilter
-from .config import BLOCKLIST_FILE, DNS_TIMEOUT, HOST, PORT, UPSTREAM_DNS, WHITELIST_FILE
+from .config import (
+    BLOCKLIST_FILE,
+    DNS_TIMEOUT,
+    HOST,
+    PORT,
+    UPSTREAM_DNS,
+    UPSTREAM_PORT,
+    WHITELIST_FILE,
+)
 from .logger import Stats
 
 
@@ -25,6 +33,8 @@ def read_qname(packet: bytes, offset: int) -> tuple[str, int]:
 
 
 def question_end(packet: bytes) -> tuple[str, int, int]:
+    if len(packet) < 12:
+        raise ValueError("Invalid DNS packet: header too short")
     domain, offset = read_qname(packet, 12)
     if offset + 4 > len(packet):
         raise ValueError("Incomplete DNS question")
@@ -32,16 +42,24 @@ def question_end(packet: bytes) -> tuple[str, int, int]:
     return domain, qtype, offset + 4
 
 
-def blocked_response(query: bytes) -> bytes:
+def blocked_response(query: bytes, q_end: int | None = None) -> bytes:
     # NXDOMAIN: preserve ID, set response + recursion available, return one question.
     flags = 0x8183
-    return query[:2] + struct.pack("!H", flags) + query[4:6] + b"\x00\x00\x00\x00\x00\x00" + query[12:]
+    q_bytes = query[12:q_end] if q_end is not None else query[12:]
+    return query[:2] + struct.pack("!H", flags) + query[4:6] + b"\x00\x00\x00\x00\x00\x00" + q_bytes
+
+
+def servfail_response(query: bytes, q_end: int | None = None) -> bytes:
+    # SERVFAIL: preserve ID, set response + recursion available, return one question.
+    flags = 0x8182
+    q_bytes = query[12:q_end] if q_end is not None else query[12:]
+    return query[:2] + struct.pack("!H", flags) + query[4:6] + b"\x00\x00\x00\x00\x00\x00" + q_bytes
 
 
 def forward(query: bytes) -> bytes:
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as upstream:
         upstream.settimeout(DNS_TIMEOUT)
-        upstream.sendto(query, UPSTREAM_DNS + (53,))
+        upstream.sendto(query, (UPSTREAM_DNS, UPSTREAM_PORT))
         response, _ = upstream.recvfrom(4096)
         return response
 
@@ -52,22 +70,28 @@ def run() -> None:
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server.bind((HOST, PORT))
     print(f"Laptop Ad Blocker DNS server listening on {HOST}:{PORT}")
+    print(f"Forwarding to upstream DNS: {UPSTREAM_DNS}:{UPSTREAM_PORT}")
     print(f"Blocklist: {BLOCKLIST_FILE}")
 
     try:
         while True:
             packet, client = server.recvfrom(4096)
             try:
-                domain, qtype, _ = question_end(packet)
+                domain, qtype, q_end = question_end(packet)
                 blocked = domain_filter.is_blocked(domain)
                 stats.record(blocked)
                 if blocked:
                     print(f"BLOCK  {domain}")
-                    response = blocked_response(packet)
+                    response = blocked_response(packet, q_end)
+                    server.sendto(response, client)
                 else:
                     print(f"ALLOW  {domain} (type={qtype})")
-                    response = forward(packet)
-                server.sendto(response, client)
+                    try:
+                        response = forward(packet)
+                        server.sendto(response, client)
+                    except (TimeoutError, socket.timeout) as exc:
+                        print(f"Upstream timeout for {domain}: {exc}")
+                        server.sendto(servfail_response(packet, q_end), client)
             except (ValueError, OSError) as exc:
                 print(f"Request error: {exc}")
             except Exception as exc:
