@@ -69,9 +69,9 @@ def run() -> None:
     stats = Stats()
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server.bind((HOST, PORT))
-    print(f"Laptop Ad Blocker DNS server listening on {HOST}:{PORT}")
-    print(f"Forwarding to upstream DNS: {UPSTREAM_DNS}:{UPSTREAM_PORT}")
-    print(f"Blocklist: {BLOCKLIST_FILE}")
+    print(f"Laptop Ad Blocker DNS server listening on {HOST}:{PORT}", flush=True)
+    print(f"Forwarding to upstream DNS: {UPSTREAM_DNS}:{UPSTREAM_PORT}", flush=True)
+    print(f"Blocklist: {BLOCKLIST_FILE}", flush=True)
 
     try:
         while True:
@@ -81,24 +81,24 @@ def run() -> None:
                 blocked = domain_filter.is_blocked(domain)
                 stats.record(blocked)
                 if blocked:
-                    print(f"BLOCK  {domain}")
+                    print(f"BLOCK  {domain}", flush=True)
                     response = blocked_response(packet, q_end)
                     server.sendto(response, client)
                 else:
-                    print(f"ALLOW  {domain} (type={qtype})")
+                    print(f"ALLOW  {domain} (type={qtype})", flush=True)
                     try:
                         response = forward(packet)
                         server.sendto(response, client)
                     except (TimeoutError, socket.timeout) as exc:
-                        print(f"Upstream timeout for {domain}: {exc}")
+                        print(f"Upstream timeout for {domain}: {exc}", flush=True)
                         server.sendto(servfail_response(packet, q_end), client)
             except (ValueError, OSError) as exc:
-                print(f"Request error: {exc}")
+                print(f"Request error: {exc}", flush=True)
             except Exception as exc:
-                print(f"Unexpected request error: {exc}")
+                print(f"Unexpected request error: {exc}", flush=True)
     except KeyboardInterrupt:
-        print("\nStopping DNS server.")
-        print(stats.summary())
+        print("\nStopping DNS server.", flush=True)
+        print(stats.summary(), flush=True)
     finally:
         server.close()
 
