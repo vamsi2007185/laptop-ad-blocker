@@ -4,34 +4,45 @@ A lightweight DNS-based ad and tracker blocker for a Windows laptop.
 
 ## Features
 
-- Local DNS proxy on `127.0.0.1:5354` (configurable via `DNS_PORT`)
-- Domain-based blocking
+- Local DNS proxy for laptops on `127.0.0.1:5354` (configurable via `DNS_PORT`)
+- Native Android app using zero-root local `VpnService` DNS sinkhole
+- Domain-based hierarchical ad & tracker blocking
 - Separate blocklist and whitelist
-- Runtime statistics
-- Simple logging
-- No HTTPS interception
-- Standard-library Python implementation
+- Real-time statistics and query logs
+- No HTTPS interception or external traffic tunneling
+- Pure standard-library Python core & modern Kotlin Jetpack Compose Android app
 
 ## Project structure
 
 ```text
 laptop-ad-blocker/
-├── blocker/
+├── android/                         # Android Ad Blocker application
+│   ├── app/                         # Native Kotlin & Jetpack Compose app
+│   │   ├── src/main/java/           # VpnService, DNS packet parser & UI
+│   │   └── src/test/java/           # Unit tests
+│   ├── build.gradle.kts
+│   └── README.md                    # Android setup and build instructions
+├── blocker/                         # Laptop Python DNS proxy
 │   ├── __init__.py
 │   ├── config.py
 │   ├── blocklist.py
 │   ├── logger.py
 │   └── dns_server.py
-├── config/
+├── config/                          # Shared domain rule lists
 │   ├── blocklist.txt
 │   └── whitelist.txt
-├── tests/
+├── tests/                           # Python unit tests
 │   ├── test_blocklist.py
 │   └── test_dns_server.py
 ├── requirements.txt
+├── run_blocker.bat                  # One-click Windows launcher
 ├── .gitignore
 └── README.md
 ```
+
+## Android App
+
+See the dedicated [**Android README**](android/README.md) for architecture, building with Android Studio/Gradle, and Termux terminal instructions.
 
 ## Requirements
 

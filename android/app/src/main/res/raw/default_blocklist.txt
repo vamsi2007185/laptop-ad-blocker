@@ -1,0 +1,10 @@
+# Starter domains for development/testing.
+# Add one domain per line. Keep this list conservative while testing.
+ad.doubleclick.net
+pagead2.googlesyndication.com
+googleads.g.doubleclick.net
+adservice.google.com
+ads.yahoo.com
+analytics.google.com
+connect.facebook.net
+pixel.facebook.com
